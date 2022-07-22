@@ -49,9 +49,11 @@ rm -i /usr/bin/python
 # always good to have around so better transfer it to a safe place ...
 flashrom -p host -r bios.bin.backup
 cp bios.bin.backup bios.bin
+# remove the original altfw tianocore payload
 cbfstool bios.bin remove -r RW_LEGACY -n altfw/tianocore
 # i guess this is required to avoid chromeos updates overwriting our changed firmware
 cbfstool bios.bin remove -r RW_LEGACY -n cros_allow_auto_update
+# add the new altfw tianocore payload
 cbfstool bios.bin add-payload -r RW_LEGACY -n altfw/tianocore -f UEFIPAYLOAD.fd -c lzma
 # write the RW_LEGACY section of the adjusted firmware to flash
 flashrom -p host -i RW_LEGACY -w bios.bin
@@ -79,7 +81,7 @@ cp bios.bin.backup bios.bin
 # double check the size of the RW_LEGACY section - required below
 fmap_decode bios.bin | grep RW_LEGACY
 # get the mrchromebox uefi firmware - file should be adjusted to chromebook type
-wget https://www.mrchromebox.tech/files/firmware/full_rom/coreboot_tiano-rabbid-mrchromebox_20220718.rom
+curl -LO https://www.mrchromebox.tech/files/firmware/full_rom/coreboot_tiano-rabbid-mrchromebox_20220718.rom
 # extract the uefi payload from it
 cbfstool coreboot_tiano-rabbid-mrchromebox_20220718.rom extract -n fallback/payload -m x86 -f cbox.pl
 # create a proper RW_LEGACY firmware file out of it - keep in mind the side found out above
@@ -95,7 +97,7 @@ crossystem dev_default_boot=usb
 #reboot with an uefi linux image on usb or sd card
 
 
-this is the procedure if altfw is supported (still untested) - example: hp chromebook 14a (blooglet)
+this is the procedure if altfw is supported - example: hp chromebook 14a (blooglet)
 
 - first find the codename of your chromebook and check if there is a uefi firmware for it at https://mrchromebox.tech/#devices
 - next find the name of the firmware file at https://github.com/MrChromebox/scripts/blob/master/sources.sh
@@ -104,13 +106,15 @@ this is the procedure if altfw is supported (still untested) - example: hp chrom
 # always good to have around so better transfer it to a safe place ...
 flashrom -p host -r bios.bin.backup
 cp bios.bin.backup bios.bin
+# get the mrchromebox uefi firmware - file should be adjusted to chromebook type
+curl -LO https://www.mrchromebox.tech/files/firmware/full_rom/coreboot_tiano-blooglet-mrchromebox_20220718.rom
+# extract the uefi payload from it
+cbfstool coreboot_tiano-blooglet-mrchromebox_20220718.rom extract -n fallback/payload -m x86 -f cbox.pl
+# remove the original altfw tianocore payload
 cbfstool bios.bin remove -r RW_LEGACY -n altfw/tianocore
 # i guess this is required to avoid chromeos updates overwriting our changed firmware
 cbfstool bios.bin remove -r RW_LEGACY -n cros_allow_auto_update
-# get the mrchromebox uefi firmware - file should be adjusted to chromebook type
-wget https://www.mrchromebox.tech/files/firmware/full_rom/coreboot_tiano-blooglet-mrchromebox_20220718.rom
-# extract the uefi payload from it
-cbfstool coreboot_tiano-blooglet-mrchromebox_20220718.rom extract -n fallback/payload -m x86 -f cbox.pl
+# add the new altfw tianocore payload
 cbfstool bios.bin add-payload -r RW_LEGACY -n altfw/tianocore -f cbox.pl -c lzma
 # write the RW_LEGACY section of the adjusted firmware to flash
 flashrom -p host -i RW_LEGACY -w bios.bin
